@@ -41,13 +41,37 @@ export default function MapPage() {
   const [selectedProvider, setSelectedProvider] = useState<ServiceProvider | null>(null);
   const [mapboxToken, setMapboxToken] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [tokenLoading, setTokenLoading] = useState(true);
 
-  // Redirect to auth if not logged in
+  // Redirect to auth if not logged in and fetch Mapbox token
   useEffect(() => {
     if (!user) {
       navigate('/auth');
+      return;
     }
-  }, [user, navigate]);
+
+    // Fetch Mapbox token from edge function
+    const fetchMapboxToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        if (error) throw error;
+        if (data?.token) {
+          setMapboxToken(data.token);
+        }
+      } catch (error) {
+        console.error('Error fetching Mapbox token:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load map configuration. Please contact support.",
+          variant: "destructive",
+        });
+      } finally {
+        setTokenLoading(false);
+      }
+    };
+
+    fetchMapboxToken();
+  }, [user, navigate, toast]);
 
   // Get user's current location
   useEffect(() => {
@@ -76,17 +100,9 @@ export default function MapPage() {
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || !userLocation) return;
+    if (!mapContainer.current || !userLocation || !mapboxToken || tokenLoading) return;
 
-    // For now, we'll use a temporary input for Mapbox token
-    // In production, this should be stored in Supabase Edge Function Secrets
-    const tempToken = mapboxToken || 'pk.eyJ1IjoidGVtcC11c2VyIiwiYSI6ImNreDR3eHp6eDAwdjEyb3F6d2M4NjR6bWoifQ.demo'; // Demo token - replace with real one
-    
-    if (!mapboxToken) {
-      return; // Don't initialize map without token
-    }
-
-    mapboxgl.accessToken = tempToken;
+    mapboxgl.accessToken = mapboxToken;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -113,7 +129,7 @@ export default function MapPage() {
     return () => {
       map.current?.remove();
     };
-  }, [userLocation, mapboxToken]);
+  }, [userLocation, mapboxToken, tokenLoading]);
 
   const fetchNearbyProviders = async () => {
     if (!userLocation) return;
@@ -188,39 +204,17 @@ export default function MapPage() {
       <Navbar />
       
       <div className="relative h-screen">
-        {/* Map Token Input (temporary - should be in env) */}
-        {!mapboxToken && (
+        {/* Loading indicator */}
+        {tokenLoading && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-96">
             <Card>
-              <CardContent className="p-4 space-y-4">
-                <h3 className="font-semibold">Enter Mapbox Token</h3>
-                <p className="text-sm text-muted-foreground">
-                  Get your free token from <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">mapbox.com</a>
-                </p>
-                <Input
-                  placeholder="pk.eyJ1IjoidXNlcm5hbWUi..."
-                  value={mapboxToken}
-                  onChange={(e) => setMapboxToken(e.target.value)}
-                />
-                <Button 
-                  className="w-full" 
-                  onClick={() => {
-                    if (mapboxToken.startsWith('pk.')) {
-                      toast({
-                        title: "Token saved",
-                        description: "Map will load shortly.",
-                      });
-                    } else {
-                      toast({
-                        variant: "destructive",
-                        title: "Invalid token",
-                        description: "Please enter a valid Mapbox token.",
-                      });
-                    }
-                  }}
-                >
-                  Load Map
-                </Button>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground">
+                    Loading map configuration...
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
