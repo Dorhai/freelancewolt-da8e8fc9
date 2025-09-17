@@ -136,7 +136,22 @@ export function BookingModal({ provider, isOpen, onClose, onBookingSuccess }: Bo
 
       // Send notification
       try {
-        const notificationMessage = `🎉 Booking Confirmed!\n\nHi ${formData.firstName}, your appointment with ${provider.company_name} has been scheduled for ${format(scheduledDateTime, 'PPP')} at ${selectedTime}.\n\nService: ${selectedServiceData?.category.name}\nAddress: ${formData.address}\n\nWe'll send you a reminder before your appointment!`;
+        const scheduledDate = format(scheduledDateTime, 'EEEE, MMMM do, yyyy');
+        const notificationMessage = `🎉 Booking Confirmed!
+
+Hi ${formData.firstName}!
+
+Your appointment has been scheduled:
+
+👨‍💼 Provider: ${provider.company_name}
+📅 Date: ${scheduledDate}
+🕒 Time: ${selectedTime}
+🏠 Address: ${formData.address}
+💼 Service: ${selectedServiceData?.category.name}
+
+We'll send you a reminder before your appointment!
+
+Thank you for choosing our service! 😊`;
 
         await supabase.functions.invoke('send-sms-notification', {
           body: {

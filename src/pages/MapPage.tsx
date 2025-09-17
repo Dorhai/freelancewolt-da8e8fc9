@@ -106,8 +106,8 @@ export default function MapPage() {
             title: "Location access denied",
             description: "Please enable location services to find nearby providers.",
           });
-          // Default to a central location (New York)
-          setUserLocation([-74.006, 40.7128]);
+          // Default to NYC where our mock data is located
+          setUserLocation([-73.9855, 40.758]);
         }
       );
     }
@@ -147,8 +147,6 @@ export default function MapPage() {
   }, [userLocation, mapboxToken, tokenLoading]);
 
   const fetchNearbyProviders = async () => {
-    if (!userLocation) return;
-
     try {
       const { data, error } = await supabase
         .from('pro_profiles')
@@ -169,15 +167,27 @@ export default function MapPage() {
 
       if (error) throw error;
 
+      console.log('Fetched providers:', data);
+
       const providersData = data?.map(provider => ({
         ...provider,
-        user: Array.isArray(provider.user) ? provider.user[0] : provider.user
+        user: Array.isArray(provider.user) ? provider.user[0] : provider.user,
+        services: provider.services || []
       })) || [];
 
+      console.log('Processed providers for map:', providersData);
       setProviders(providersData);
+
+      // Clear existing markers
+      if (map.current) {
+        // Remove existing provider markers (keep user location marker)
+        const markers = document.querySelectorAll('.marker-provider');
+        markers.forEach(marker => marker.remove());
+      }
 
       // Add markers for each provider
       providersData.forEach((provider) => {
+        console.log('Adding marker for provider:', provider.company_name, 'at', provider.lat, provider.lng);
         if (map.current && provider.lat && provider.lng) {
           // Create custom marker element
           const markerEl = document.createElement('div');
@@ -191,6 +201,8 @@ export default function MapPage() {
             cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            position: relative;
           `;
 
           const marker = new mapboxgl.Marker({ element: markerEl })
@@ -240,6 +252,8 @@ export default function MapPage() {
             setSelectedProvider(provider);
             tooltip.remove();
           });
+
+          console.log('Marker added for:', provider.company_name);
         }
       });
     } catch (error) {

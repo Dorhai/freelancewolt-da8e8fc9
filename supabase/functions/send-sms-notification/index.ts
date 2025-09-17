@@ -39,8 +39,8 @@ serve(async (req) => {
     }
 
     // Validate phone number format (basic validation)
-    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-    if (!phoneRegex.test(to.replace(/[\s\-\(\)]/g, ''))) {
+    const phoneRegex = /^\+?[0-9\s\-\(\)]+$/;
+    if (!phoneRegex.test(to)) {
       console.error('Invalid phone number format:', to);
       return new Response(
         JSON.stringify({ error: 'Invalid phone number format' }),
@@ -53,7 +53,19 @@ serve(async (req) => {
 
     // Format phone number (remove spaces, dashes, parentheses)
     const cleanPhoneNumber = to.replace(/[\s\-\(\)]/g, '');
-    const formattedPhone = cleanPhoneNumber.startsWith('+') ? cleanPhoneNumber : `+1${cleanPhoneNumber}`;
+    let formattedPhone = cleanPhoneNumber;
+    
+    // Add country code if not present
+    if (!formattedPhone.startsWith('+')) {
+      // If starts with 0, assume it's a local number and add country code
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = '+972' + formattedPhone.substring(1); // Israel country code as example
+      } else if (formattedPhone.length === 10) {
+        formattedPhone = '+1' + formattedPhone; // US country code
+      } else {
+        formattedPhone = '+' + formattedPhone;
+      }
+    }
 
     // Prepare Twilio API request
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
