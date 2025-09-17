@@ -441,9 +441,9 @@ export function BookingModal({ provider, isOpen, onClose, onBookingSuccess }: Bo
             Cancel
           </Button>
           <Button 
-            type="submit" 
+            type="button" 
             onClick={handleSubmit}
-            disabled={isSubmitting || !selectedDate || !selectedTime || !selectedService}
+            disabled={isSubmitting || !selectedDate || !selectedTime || !selectedService || !formData.firstName || !formData.lastName || !formData.phone || !formData.email || !formData.address}
             className="min-w-[120px]"
           >
             {isSubmitting ? "Booking..." : "Confirm Booking"}

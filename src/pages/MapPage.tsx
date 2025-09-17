@@ -5,10 +5,12 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/Navbar';
+import { BookingModal } from '@/components/BookingModal';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, Search, Filter, Navigation } from 'lucide-react';
+import { MapPin, Search, Filter, Navigation, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ServiceProvider {
@@ -21,6 +23,7 @@ interface ServiceProvider {
   lat: number;
   lng: number;
   verification_status: string;
+  avg_price_hint: number;
   user: {
     first_name: string;
     last_name: string;
@@ -28,6 +31,16 @@ interface ServiceProvider {
     rating_count: number;
     photo_url: string;
   };
+  services: {
+    id: string;
+    description: string;
+    price: number;
+    pricing_type: string;
+    category: {
+      name: string;
+      icon: string;
+    };
+  }[];
 }
 
 export default function MapPage() {
@@ -42,6 +55,8 @@ export default function MapPage() {
   const [mapboxToken, setMapboxToken] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [tokenLoading, setTokenLoading] = useState(true);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [hoveredProvider, setHoveredProvider] = useState<string | null>(null);
 
   // Redirect to auth if not logged in and fetch Mapbox token
   useEffect(() => {
@@ -139,7 +154,14 @@ export default function MapPage() {
         .from('pro_profiles')
         .select(`
           *,
-          user:users(first_name, last_name, rating_avg, rating_count, photo_url)
+          user:users(first_name, last_name, rating_avg, rating_count, photo_url),
+          services:pro_services(
+            id,
+            description,
+            price,
+            pricing_type,
+            category:service_categories(name, icon)
+          )
         `)
         .eq('verification_status', 'verified')
         .not('lat', 'is', null)
@@ -157,21 +179,66 @@ export default function MapPage() {
       // Add markers for each provider
       providersData.forEach((provider) => {
         if (map.current && provider.lat && provider.lng) {
-          const marker = new mapboxgl.Marker({ color: '#34D399' })
+          // Create custom marker element
+          const markerEl = document.createElement('div');
+          markerEl.className = 'marker-provider';
+          markerEl.style.cssText = `
+            width: 32px;
+            height: 32px;
+            background: #34D399;
+            border: 3px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          `;
+
+          const marker = new mapboxgl.Marker({ element: markerEl })
             .setLngLat([provider.lng, provider.lat])
-            .setPopup(
-              new mapboxgl.Popup().setHTML(`
-                <div class="p-2">
-                  <h4 class="font-semibold">${provider.company_name || `${provider.user?.first_name} ${provider.user?.last_name}`}</h4>
-                  <p class="text-sm text-gray-600">${provider.bio || 'Service Provider'}</p>
-                  <p class="text-sm">⭐ ${provider.user?.rating_avg?.toFixed(1) || 'New'} (${provider.user?.rating_count || 0} reviews)</p>
-                </div>
-              `)
-            )
             .addTo(map.current);
 
-          marker.getElement().addEventListener('click', () => {
+          // Hover tooltip
+          const tooltip = new mapboxgl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            offset: 15
+          });
+
+          markerEl.addEventListener('mouseenter', () => {
+            setHoveredProvider(provider.id);
+            markerEl.style.transform = 'scale(1.2)';
+            markerEl.style.background = '#10B981';
+            
+            tooltip
+              .setLngLat([provider.lng, provider.lat])
+              .setHTML(`
+                <div class="p-3 min-w-[200px]">
+                  <div class="flex items-center gap-2 mb-2">
+                    <h4 class="font-semibold text-sm">${provider.company_name || `${provider.user?.first_name} ${provider.user?.last_name}`}</h4>
+                  </div>
+                  <p class="text-xs text-gray-600 mb-2">${provider.bio || 'Service Provider'}</p>
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xs">⭐ ${provider.user?.rating_avg?.toFixed(1) || 'New'}</span>
+                    <span class="text-xs text-gray-500">(${provider.user?.rating_count || 0} reviews)</span>
+                  </div>
+                  <div class="text-xs font-medium text-green-600">
+                    Starting from $${provider.avg_price_hint || 50}/hour
+                  </div>
+                </div>
+              `)
+              .addTo(map.current!);
+          });
+
+          markerEl.addEventListener('mouseleave', () => {
+            setHoveredProvider(null);
+            markerEl.style.transform = 'scale(1)';
+            markerEl.style.background = '#34D399';
+            tooltip.remove();
+          });
+
+          markerEl.addEventListener('click', () => {
             setSelectedProvider(provider);
+            tooltip.remove();
           });
         }
       });
@@ -285,7 +352,12 @@ export default function MapPage() {
                   </Button>
                 </div>
                 <div className="flex space-x-2 mt-4">
-                  <Button className="flex-1">
+                  <Button 
+                    className="flex-1"
+                    onClick={() => {
+                      setIsBookingModalOpen(true);
+                    }}
+                  >
                     Book Now
                   </Button>
                   <Button variant="outline" className="flex-1">
@@ -296,6 +368,22 @@ export default function MapPage() {
             </Card>
           </div>
         )}
+
+        {/* Booking Modal */}
+        <BookingModal
+          provider={selectedProvider}
+          isOpen={isBookingModalOpen}
+          onClose={() => {
+            setIsBookingModalOpen(false);
+            setSelectedProvider(null);
+          }}
+          onBookingSuccess={() => {
+            toast({
+              title: "Booking Confirmed!",
+              description: "Your appointment has been scheduled successfully."
+            });
+          }}
+        />
 
         {/* Legend */}
         <div className="absolute top-20 left-4 z-10">
