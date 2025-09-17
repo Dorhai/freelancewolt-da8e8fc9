@@ -70,8 +70,13 @@ export default function Dashboard() {
     if (user?.user_metadata?.first_name) {
       return user.user_metadata.first_name;
     }
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name.split(' ')[0];
+    }
     if (user?.email) {
-      return user.email.split('@')[0];
+      // Extract first part before @ and capitalize
+      const emailPart = user.email.split('@')[0];
+      return emailPart.charAt(0).toUpperCase() + emailPart.slice(1);
     }
     return 'User';
   };
