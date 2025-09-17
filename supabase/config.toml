@@ -1,1 +1,14 @@
 project_id = "pfwapkdaxjtgwbncwynp"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[functions.get-mapbox-token]
+verify_jwt = false
+
+[functions.send-sms-notification]
+verify_jwt = true

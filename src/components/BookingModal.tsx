@@ -134,8 +134,23 @@ export function BookingModal({ provider, isOpen, onClose, onBookingSuccess }: Bo
           });
       }
 
-      // Send notification (placeholder for now)
-      console.log('Booking created:', booking);
+      // Send notification
+      try {
+        const notificationMessage = `🎉 Booking Confirmed!\n\nHi ${formData.firstName}, your appointment with ${provider.company_name} has been scheduled for ${format(scheduledDateTime, 'PPP')} at ${selectedTime}.\n\nService: ${selectedServiceData?.category.name}\nAddress: ${formData.address}\n\nWe'll send you a reminder before your appointment!`;
+
+        await supabase.functions.invoke('send-sms-notification', {
+          body: {
+            to: formData.phone,
+            message: notificationMessage,
+            type: 'booking_confirmation'
+          }
+        });
+
+        console.log('SMS notification sent successfully');
+      } catch (smsError) {
+        console.error('Failed to send SMS notification:', smsError);
+        // Don't fail the booking if SMS fails
+      }
       
       toast({
         title: "Booking Confirmed! 🎉",
