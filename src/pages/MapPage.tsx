@@ -189,12 +189,18 @@ export default function MapPage() {
       providersData.forEach((provider) => {
         console.log('Adding marker for provider:', provider.company_name, 'at', provider.lat, provider.lng);
         if (map.current && provider.lat && provider.lng) {
-          // Create custom marker element
+          // Create custom marker element with person icon
           const markerEl = document.createElement('div');
           markerEl.className = 'marker-provider';
+          markerEl.innerHTML = `
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          `;
           markerEl.style.cssText = `
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
             background: #34D399;
             border: 3px solid white;
             border-radius: 50%;
@@ -203,6 +209,9 @@ export default function MapPage() {
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             z-index: 1000;
             position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           `;
 
           const marker = new mapboxgl.Marker({ element: markerEl })
@@ -403,14 +412,17 @@ export default function MapPage() {
         <div className="absolute top-20 left-4 z-10">
           <Card className="shadow-lg">
             <CardContent className="p-3 space-y-2">
-              <div className="flex items-center space-x-2 text-sm">
-                <div className="w-3 h-3 rounded-full bg-primary"></div>
-                <span>Your Location</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm">
-                <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                <span>Service Providers</span>
-              </div>
+          <div className="flex items-center space-x-2 text-sm">
+            <div className="w-3 h-3 rounded-full bg-primary"></div>
+            <span>Your Location</span>
+          </div>
+          <div className="flex items-center space-x-2 text-sm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Service Providers</span>
+          </div>
             </CardContent>
           </Card>
         </div>
