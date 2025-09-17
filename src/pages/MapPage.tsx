@@ -132,11 +132,17 @@ export default function MapPage() {
       'top-right'
     );
 
-    // Add user location marker
-    new mapboxgl.Marker({ color: '#FF385C' })
-      .setLngLat(userLocation)
-      .setPopup(new mapboxgl.Popup().setHTML('<div><strong>Your Location</strong></div>'))
-      .addTo(map.current);
+     // Add user location marker with data attribute
+     const userMarker = new mapboxgl.Marker({ color: '#FF385C' })
+       .setLngLat(userLocation)
+       .setPopup(new mapboxgl.Popup().setHTML('<div><strong>Your Location</strong></div>'))
+       .addTo(map.current);
+     
+     // Add data attribute to identify user marker
+     const userMarkerEl = userMarker.getElement();
+     if (userMarkerEl) {
+       userMarkerEl.setAttribute('data-user-location', 'true');
+     }
 
     // Fetch and display service providers
     fetchNearbyProviders();

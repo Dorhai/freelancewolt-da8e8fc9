@@ -22,15 +22,15 @@ serve(async (req) => {
 
     console.log('Sending SMS notification:', { to, type, messageLength: message.length });
 
-    // Get Twilio credentials from secrets
+    // Get Twilio credentials from secrets - check both possible names
     const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID') || Deno.env.get('TWILIO_SID_TOKEN');
     const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
     const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER');
 
     console.log('Twilio configuration check:');
-    console.log('ACCOUNT_SID exists:', !!TWILIO_ACCOUNT_SID);
-    console.log('AUTH_TOKEN exists:', !!TWILIO_AUTH_TOKEN);
-    console.log('PHONE_NUMBER exists:', !!TWILIO_PHONE_NUMBER);
+    console.log('ACCOUNT_SID exists:', !!TWILIO_ACCOUNT_SID, 'Value preview:', TWILIO_ACCOUNT_SID?.substring(0, 10) + '...');
+    console.log('AUTH_TOKEN exists:', !!TWILIO_AUTH_TOKEN, 'Value preview:', TWILIO_AUTH_TOKEN?.substring(0, 10) + '...');
+    console.log('PHONE_NUMBER exists:', !!TWILIO_PHONE_NUMBER, 'Value:', TWILIO_PHONE_NUMBER);
 
     if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
       console.error('Missing Twilio configuration');
