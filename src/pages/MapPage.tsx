@@ -106,8 +106,8 @@ export default function MapPage() {
             title: "Location access denied",
             description: "Please enable location services to find nearby providers.",
           });
-          // Default to NYC where our mock data is located
-          setUserLocation([-73.9855, 40.758]);
+          // Default to Tel Aviv coordinates where our mock data is located
+          setUserLocation([34.7818, 32.0853]);
         }
       );
     }

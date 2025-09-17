@@ -38,8 +38,8 @@ serve(async (req) => {
       );
     }
 
-    // Validate phone number format (basic validation)
-    const phoneRegex = /^\+?[0-9\s\-\(\)]+$/;
+    // Validate phone number format (more flexible for Israeli numbers)
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)]+$/;
     if (!phoneRegex.test(to)) {
       console.error('Invalid phone number format:', to);
       return new Response(
@@ -51,21 +51,36 @@ serve(async (req) => {
       );
     }
 
-    // Format phone number (remove spaces, dashes, parentheses)
-    const cleanPhoneNumber = to.replace(/[\s\-\(\)]/g, '');
+    // Format phone number for Israel (remove spaces, dashes, parentheses)
+    let cleanPhoneNumber = to.replace(/[\s\-\(\)]/g, '');
     let formattedPhone = cleanPhoneNumber;
     
-    // Add country code if not present
+    console.log('Original phone:', to);
+    console.log('Cleaned phone:', cleanPhoneNumber);
+    
+    // Handle Israeli phone numbers
     if (!formattedPhone.startsWith('+')) {
-      // If starts with 0, assume it's a local number and add country code
       if (formattedPhone.startsWith('0')) {
-        formattedPhone = '+972' + formattedPhone.substring(1); // Israel country code as example
-      } else if (formattedPhone.length === 10) {
-        formattedPhone = '+1' + formattedPhone; // US country code
-      } else {
+        // Israeli local number starting with 0 (remove 0, add +972)
+        formattedPhone = '+972' + formattedPhone.substring(1);
+      } else if (formattedPhone.startsWith('972')) {
+        // Number already has country code but no +
         formattedPhone = '+' + formattedPhone;
+      } else if (formattedPhone.length >= 9 && formattedPhone.length <= 10) {
+        // Assume Israeli mobile number, add country code
+        formattedPhone = '+972' + formattedPhone;
+      } else {
+        // Default to US for other numbers
+        formattedPhone = '+1' + formattedPhone;
+      }
+    } else {
+      // Already has +, but check for common mistake: "+972 0524..."
+      if (formattedPhone.includes(' 0')) {
+        formattedPhone = formattedPhone.replace(' 0', '');
       }
     }
+    
+    console.log('Final formatted phone:', formattedPhone);
 
     // Prepare Twilio API request
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
