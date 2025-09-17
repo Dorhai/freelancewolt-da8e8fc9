@@ -23,7 +23,7 @@ serve(async (req) => {
     console.log('Sending SMS notification:', { to, type, messageLength: message.length });
 
     // Get Twilio credentials from secrets
-    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
+    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID') || Deno.env.get('TWILIO_SID_TOKEN');
     const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
     const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER');
 

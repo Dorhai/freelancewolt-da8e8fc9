@@ -183,6 +183,15 @@ export default function MapPage() {
         // Remove existing provider markers (keep user location marker)
         const markers = document.querySelectorAll('.marker-provider');
         markers.forEach(marker => marker.remove());
+        
+        // Also remove any existing mapbox markers except user location
+        const existingMarkers = document.querySelectorAll('.mapboxgl-marker:not([data-user-location])');
+        existingMarkers.forEach(marker => {
+          const parent = marker.parentElement;
+          if (parent && parent.querySelector('.marker-provider')) {
+            parent.remove();
+          }
+        });
       }
 
       // Add markers for each provider
