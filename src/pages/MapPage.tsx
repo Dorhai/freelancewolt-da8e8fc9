@@ -189,24 +189,24 @@ export default function MapPage() {
       providersData.forEach((provider) => {
         console.log('Adding marker for provider:', provider.company_name, 'at', provider.lat, provider.lng);
         if (map.current && provider.lat && provider.lng) {
-          // Create custom marker element with person icon
+          // Create custom marker element with person icon (blue style like in image)
           const markerEl = document.createElement('div');
           markerEl.className = 'marker-provider';
           markerEl.innerHTML = `
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
           `;
           markerEl.style.cssText = `
-            width: 40px;
-            height: 40px;
-            background: #34D399;
-            border: 3px solid white;
+            width: 36px;
+            height: 36px;
+            background: #3B82F6;
+            border: 2px solid white;
             border-radius: 50%;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
             z-index: 1000;
             position: relative;
             display: flex;
@@ -227,8 +227,9 @@ export default function MapPage() {
 
           markerEl.addEventListener('mouseenter', () => {
             setHoveredProvider(provider.id);
-            markerEl.style.transform = 'scale(1.2)';
-            markerEl.style.background = '#10B981';
+            markerEl.style.transform = 'scale(1.15)';
+            markerEl.style.background = '#2563EB';
+            markerEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
             
             tooltip
               .setLngLat([provider.lng, provider.lat])
@@ -242,7 +243,7 @@ export default function MapPage() {
                     <span class="text-xs">⭐ ${provider.user?.rating_avg?.toFixed(1) || 'New'}</span>
                     <span class="text-xs text-gray-500">(${provider.user?.rating_count || 0} reviews)</span>
                   </div>
-                  <div class="text-xs font-medium text-green-600">
+                  <div class="text-xs font-medium text-blue-600">
                     Starting from $${provider.avg_price_hint || 50}/hour
                   </div>
                 </div>
@@ -253,7 +254,8 @@ export default function MapPage() {
           markerEl.addEventListener('mouseleave', () => {
             setHoveredProvider(null);
             markerEl.style.transform = 'scale(1)';
-            markerEl.style.background = '#34D399';
+            markerEl.style.background = '#3B82F6';
+            markerEl.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
             tooltip.remove();
           });
 
@@ -417,7 +419,7 @@ export default function MapPage() {
             <span>Your Location</span>
           </div>
           <div className="flex items-center space-x-2 text-sm">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>

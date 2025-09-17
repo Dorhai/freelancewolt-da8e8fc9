@@ -27,10 +27,25 @@ serve(async (req) => {
     const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
     const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER');
 
+    console.log('Twilio configuration check:');
+    console.log('ACCOUNT_SID exists:', !!TWILIO_ACCOUNT_SID);
+    console.log('AUTH_TOKEN exists:', !!TWILIO_AUTH_TOKEN);
+    console.log('PHONE_NUMBER exists:', !!TWILIO_PHONE_NUMBER);
+
     if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
       console.error('Missing Twilio configuration');
+      const missingFields = [];
+      if (!TWILIO_ACCOUNT_SID) missingFields.push('TWILIO_ACCOUNT_SID');
+      if (!TWILIO_AUTH_TOKEN) missingFields.push('TWILIO_AUTH_TOKEN');
+      if (!TWILIO_PHONE_NUMBER) missingFields.push('TWILIO_PHONE_NUMBER');
+      
+      console.error('Missing fields:', missingFields.join(', '));
+      
       return new Response(
-        JSON.stringify({ error: 'Twilio configuration missing' }),
+        JSON.stringify({ 
+          error: 'Twilio configuration missing', 
+          missing_fields: missingFields 
+        }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

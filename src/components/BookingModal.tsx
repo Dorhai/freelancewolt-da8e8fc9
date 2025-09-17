@@ -65,6 +65,7 @@ export function BookingModal({ provider, isOpen, onClose, onBookingSuccess }: Bo
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedService, setSelectedService] = useState<string>('');
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [formData, setFormData] = useState({
     firstName: user?.user_metadata?.first_name || '',
     lastName: user?.user_metadata?.last_name || '',
@@ -192,6 +193,7 @@ Thank you for choosing our service! 😊`;
     setSelectedDate(undefined);
     setSelectedTime('');
     setSelectedService('');
+    setIsDatePickerOpen(false);
     setFormData({
       firstName: user?.user_metadata?.first_name || '',
       lastName: user?.user_metadata?.last_name || '',
@@ -386,33 +388,36 @@ Thank you for choosing our service! 😊`;
                   <CardTitle>Select Date & Time</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <Label>Date *</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal mt-1",
-                            !selectedDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
-                          initialFocus
-                          className={cn("p-3 pointer-events-auto")}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                   <div>
+                     <Label>Date *</Label>
+                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                       <PopoverTrigger asChild>
+                         <Button
+                           variant="outline"
+                           className={cn(
+                             "w-full justify-start text-left font-normal mt-1",
+                             !selectedDate && "text-muted-foreground"
+                           )}
+                         >
+                           <CalendarIcon className="mr-2 h-4 w-4" />
+                           {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                         </Button>
+                       </PopoverTrigger>
+                       <PopoverContent className="w-auto p-0" align="start">
+                         <Calendar
+                           mode="single"
+                           selected={selectedDate}
+                           onSelect={(date) => {
+                             setSelectedDate(date);
+                             setIsDatePickerOpen(false); // Close the popover
+                           }}
+                           disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
+                           initialFocus
+                           className={cn("p-3 pointer-events-auto")}
+                         />
+                       </PopoverContent>
+                     </Popover>
+                   </div>
 
                   <div>
                     <Label>Time *</Label>
