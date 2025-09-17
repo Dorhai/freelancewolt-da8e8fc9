@@ -202,36 +202,39 @@ export default function MapPage() {
 
       // Add markers for each provider
       providersData.forEach((provider) => {
-        console.log('Adding marker for provider:', provider.company_name, 'at', provider.lat, provider.lng);
         if (map.current && provider.lat && provider.lng) {
-          // Create custom marker element with person icon (blue style like in image)
+          console.log('Creating marker for provider:', provider.company_name, 'at coordinates:', provider.lat, provider.lng);
+          
+          // Create custom marker element with person icon
           const markerEl = document.createElement('div');
           markerEl.className = 'marker-provider';
           markerEl.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
           `;
           markerEl.style.cssText = `
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             background: #3B82F6;
             border: 2px solid white;
             border-radius: 50%;
             cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            z-index: 1000;
-            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            z-index: 1000;
           `;
 
           const marker = new mapboxgl.Marker({ element: markerEl })
             .setLngLat([provider.lng, provider.lat])
             .addTo(map.current);
+
+          console.log('✅ Marker successfully added for:', provider.company_name);
 
           // Hover tooltip
           const tooltip = new mapboxgl.Popup({
