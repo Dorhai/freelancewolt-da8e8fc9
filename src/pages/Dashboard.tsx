@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/Navbar';
+import { BookingModal } from '@/components/BookingModal';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import mapboxgl from 'mapbox-gl';
@@ -25,6 +26,7 @@ interface ServiceProvider {
   bio: string;
   lat: number;
   lng: number;
+  service_radius_km: number;
   verification_status: string;
   avg_price_hint: number;
   user: {
@@ -56,6 +58,8 @@ export default function Dashboard() {
   const [selectedProvider, setSelectedProvider] = useState<ServiceProvider | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingProvider, setBookingProvider] = useState<ServiceProvider | null>(null);
   
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -262,6 +266,16 @@ export default function Dashboard() {
     );
   };
 
+  const handleBookProvider = (provider: ServiceProvider) => {
+    setBookingProvider(provider);
+    setIsBookingModalOpen(true);
+  };
+
+  const handleBookingSuccess = () => {
+    // Refresh providers or update state as needed
+    fetchProviders();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -430,8 +444,11 @@ export default function Dashboard() {
                       </div>
                     </div>
                     
-                    <Button size="sm">
-                      View Profile
+                    <Button
+                      size="sm"
+                      onClick={() => handleBookProvider(selectedProvider)}
+                    >
+                      Book Now
                     </Button>
                   </div>
                 </CardContent>
@@ -439,6 +456,17 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
+        {/* Booking Modal */}
+        <BookingModal
+          provider={bookingProvider}
+          isOpen={isBookingModalOpen}
+          onClose={() => {
+            setIsBookingModalOpen(false);
+            setBookingProvider(null);
+          }}
+          onBookingSuccess={handleBookingSuccess}
+        />
       </div>
     </div>
   );

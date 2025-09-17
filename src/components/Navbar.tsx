@@ -86,9 +86,9 @@ export function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/bookings" className="flex items-center">
+                    <Link to="/appointments" className="flex items-center">
                       <Calendar className="mr-2 h-4 w-4" />
-                      My Bookings
+                      My Appointments
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
