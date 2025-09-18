@@ -5,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/Navbar';
-import { BookingModal } from '@/components/BookingModal';
+import { ImmediateBookingModal } from '@/components/ImmediateBookingModal';
+import { FilterPanel, FilterState } from '@/components/FilterPanel';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Search, MapPin, Filter, Star, Clock } from 'lucide-react';
+import { Search, MapPin, Filter, Star, Clock, Zap } from 'lucide-react';
 
 interface ServiceCategory {
   id: string;
@@ -29,6 +30,8 @@ interface ServiceProvider {
   service_radius_km: number;
   verification_status: string;
   avg_price_hint: number;
+  estimated_arrival_time: number;
+  is_available_now: boolean;
   user: {
     first_name: string;
     last_name: string;
@@ -60,6 +63,12 @@ export default function Dashboard() {
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingProvider, setBookingProvider] = useState<ServiceProvider | null>(null);
+  const [filters, setFilters] = useState<FilterState>({
+    maxPrice: 200,
+    maxDistance: 25,
+    maxArrivalTime: 60,
+    availableNow: true
+  });
   
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -96,7 +105,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     filterProviders();
-  }, [searchQuery, selectedCategories, providers]);
+  }, [searchQuery, selectedCategories, providers, filters]);
 
   useEffect(() => {
     if (mapboxToken && mapContainer.current) {
@@ -220,6 +229,7 @@ export default function Dashboard() {
           )
         `)
         .eq('verification_status', 'verified')
+        .eq('is_available_now', true)  // Only show available providers
         .not('lat', 'is', null)
         .not('lng', 'is', null);
 
@@ -231,8 +241,26 @@ export default function Dashboard() {
     }
   };
 
+  // Calculate distance between two points using Haversine formula
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
   const filterProviders = () => {
     let filtered = providers;
+
+    // Apply availability filter
+    if (filters.availableNow) {
+      filtered = filtered.filter(provider => provider.is_available_now);
+    }
 
     // Filter by search query
     if (searchQuery) {
@@ -254,6 +282,35 @@ export default function Dashboard() {
         )
       );
     }
+
+    // Filter by price
+    filtered = filtered.filter(provider => 
+      (provider.avg_price_hint || 0) <= filters.maxPrice
+    );
+
+    // Filter by distance (if user location is available)
+    if (userLocation) {
+      filtered = filtered.filter(provider => {
+        if (!provider.lat || !provider.lng) return false;
+        const distance = calculateDistance(
+          userLocation.lat, 
+          userLocation.lng, 
+          provider.lat, 
+          provider.lng
+        );
+        return distance <= filters.maxDistance;
+      });
+    }
+
+    // Filter by arrival time
+    filtered = filtered.filter(provider => 
+      (provider.estimated_arrival_time || 30) <= filters.maxArrivalTime
+    );
+
+    // Sort by estimated arrival time (fastest first)
+    filtered.sort((a, b) => 
+      (a.estimated_arrival_time || 30) - (b.estimated_arrival_time || 30)
+    );
 
     setFilteredProviders(filtered);
   };
@@ -291,12 +348,21 @@ export default function Dashboard() {
       <div className="container mx-auto px-4 py-6">
         {/* Welcome Message */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground">
-            Welcome back, {getFirstName()}! 👋
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Find the perfect service provider for your needs
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                <Zap className="h-6 w-6 text-yellow-500" />
+                Welcome back, {getFirstName()}! 👋
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Service providers available now - arriving in minutes!
+              </p>
+            </div>
+            <FilterPanel 
+              onFiltersChange={setFilters} 
+              userLocation={userLocation}
+            />
+          </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-180px)]">
@@ -336,9 +402,15 @@ export default function Dashboard() {
 
             {/* Results */}
             <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                {filteredProviders.length} service providers found
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-muted-foreground">
+                  {filteredProviders.length} providers available now
+                </p>
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Sorted by arrival time
+                </Badge>
+              </div>
               
               <div className="space-y-3">
                 {filteredProviders.map((provider) => (
@@ -377,9 +449,13 @@ export default function Dashboard() {
                                 {provider.user?.rating_avg || 0} ({provider.user?.rating_count || 0})
                               </span>
                             </div>
+                            <Badge variant="secondary" className="text-xs">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {provider.estimated_arrival_time || 30}min
+                            </Badge>
                             {provider.avg_price_hint && (
                               <span className="text-xs text-muted-foreground">
-                                From ${provider.avg_price_hint}
+                                ${provider.avg_price_hint}/hr
                               </span>
                             )}
                           </div>
@@ -447,8 +523,10 @@ export default function Dashboard() {
                     <Button
                       size="sm"
                       onClick={() => handleBookProvider(selectedProvider)}
+                      className="bg-green-600 hover:bg-green-700 flex items-center gap-1"
                     >
-                      Book Now
+                      <Zap className="h-3 w-3" />
+                      Book Now - {selectedProvider.estimated_arrival_time || 30}min
                     </Button>
                   </div>
                 </CardContent>
@@ -457,8 +535,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Booking Modal */}
-        <BookingModal
+        {/* Immediate Booking Modal */}
+        <ImmediateBookingModal
           provider={bookingProvider}
           isOpen={isBookingModalOpen}
           onClose={() => {

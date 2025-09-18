@@ -8,6 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/Navbar';
 import { BookingModal } from '@/components/BookingModal';
+import { ImmediateBookingModal } from '@/components/ImmediateBookingModal';
+import { RealtimeLocationTracker } from '@/components/RealtimeLocationTracker';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { MapPin, Search, Filter, Navigation, Star } from 'lucide-react';
@@ -24,6 +26,8 @@ interface ServiceProvider {
   lng: number;
   verification_status: string;
   avg_price_hint: number;
+  estimated_arrival_time: number;
+  is_available_now: boolean;
   user: {
     first_name: string;
     last_name: string;
@@ -57,6 +61,8 @@ export default function MapPage() {
   const [tokenLoading, setTokenLoading] = useState(true);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [hoveredProvider, setHoveredProvider] = useState<string | null>(null);
+  const [activeBooking, setActiveBooking] = useState<any>(null); // Track active booking for real-time updates
+  const [trackingProvider, setTrackingProvider] = useState<string | null>(null);
 
   // Redirect to auth if not logged in and fetch Mapbox token
   useEffect(() => {
@@ -168,6 +174,7 @@ export default function MapPage() {
           )
         `)
         .eq('verification_status', 'verified')
+        .eq('is_available_now', true)  // Only show available providers
         .not('lat', 'is', null)
         .not('lng', 'is', null);
 
@@ -412,8 +419,8 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* Booking Modal */}
-        <BookingModal
+        {/* Immediate Booking Modal */}
+        <ImmediateBookingModal
           provider={selectedProvider}
           isOpen={isBookingModalOpen}
           onClose={() => {
@@ -421,12 +428,34 @@ export default function MapPage() {
             setSelectedProvider(null);
           }}
           onBookingSuccess={() => {
+            setActiveBooking({ providerId: selectedProvider?.id, provider: selectedProvider });
+            setTrackingProvider(selectedProvider?.id || null);
             toast({
-              title: "Booking Confirmed!",
-              description: "Your appointment has been scheduled successfully."
+              title: "Service Provider On The Way! 🚀",
+              description: "You can now track their location in real-time."
             });
           }}
         />
+
+        {/* Real-time Location Tracker */}
+        {trackingProvider && activeBooking && mapboxToken && (
+          <div className="absolute top-4 right-4 z-10 w-96">
+            <RealtimeLocationTracker
+              providerId={trackingProvider}
+              provider={activeBooking.provider}
+              userLocation={userLocation ? { lat: userLocation[1], lng: userLocation[0] } : null}
+              mapboxToken={mapboxToken}
+              onProviderArrival={() => {
+                toast({
+                  title: "Provider Has Arrived! 🎉",
+                  description: "Your service provider is now at your location."
+                });
+                setTrackingProvider(null);
+                setActiveBooking(null);
+              }}
+            />
+          </div>
+        )}
 
         {/* Legend */}
         <div className="absolute top-20 left-4 z-10">
