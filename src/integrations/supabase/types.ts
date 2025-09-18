@@ -483,9 +483,11 @@ export type Database = {
           bio: string | null
           company_name: string | null
           created_at: string | null
+          estimated_arrival_time: number | null
           geom: string | null
           id: string
           insurance_provider: string | null
+          is_available_now: boolean | null
           languages: string[] | null
           lat: number | null
           lng: number | null
@@ -500,9 +502,11 @@ export type Database = {
           bio?: string | null
           company_name?: string | null
           created_at?: string | null
+          estimated_arrival_time?: number | null
           geom?: string | null
           id?: string
           insurance_provider?: string | null
+          is_available_now?: boolean | null
           languages?: string[] | null
           lat?: number | null
           lng?: number | null
@@ -517,9 +521,11 @@ export type Database = {
           bio?: string | null
           company_name?: string | null
           created_at?: string | null
+          estimated_arrival_time?: number | null
           geom?: string | null
           id?: string
           insurance_provider?: string | null
+          is_available_now?: boolean | null
           languages?: string[] | null
           lat?: number | null
           lng?: number | null
@@ -588,6 +594,53 @@ export type Database = {
           },
           {
             foreignKeyName: "pro_services_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "pro_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_locations: {
+        Row: {
+          created_at: string
+          heading: number | null
+          id: string
+          is_available: boolean
+          is_online: boolean
+          last_updated: string
+          lat: number
+          lng: number
+          pro_id: string
+          speed: number | null
+        }
+        Insert: {
+          created_at?: string
+          heading?: number | null
+          id?: string
+          is_available?: boolean
+          is_online?: boolean
+          last_updated?: string
+          lat: number
+          lng: number
+          pro_id: string
+          speed?: number | null
+        }
+        Update: {
+          created_at?: string
+          heading?: number | null
+          id?: string
+          is_available?: boolean
+          is_online?: boolean
+          last_updated?: string
+          lat?: number
+          lng?: number
+          pro_id?: string
+          speed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_locations_pro_id_fkey"
             columns: ["pro_id"]
             isOneToOne: false
             referencedRelation: "pro_profiles"
